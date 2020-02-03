@@ -1,13 +1,22 @@
 import React from 'react';
 import '../styles/Home.css';
 import { Tabs, Button } from 'antd';
-import { GEOLOCATION_OPTIONS, POSITION_KEY } from '../constants';
+import {
+    GEOLOCATION_OPTIONS,
+    POSITION_KEY,
+    TOKEN_KEY,
+    API_ROOT,
+    AUTH_HEADER,
+} from '../constants';
 
 const { TabPane } = Tabs;
+
 export class Home extends React.Component {
     state = {
         loadingGeolocation: false,
+        loadingPosts: false,
         errorMessage: null,
+        posts: [],
     }
 
     getGeolocation() {
@@ -28,7 +37,6 @@ export class Home extends React.Component {
             });
         }
     }
-
     onGeolocationSuccess = (position) => {
         this.setState({
             loadingGeolocation: false,
@@ -37,6 +45,7 @@ export class Home extends React.Component {
         console.log(position);
         const { latitude, longitude } = position.coords;
         localStorage.setItem(POSITION_KEY, JSON.stringify({ latitude, longitude }));
+        this.loadNearbyPost();
     }
 
     onGeolocationFailure = () => {
@@ -46,10 +55,42 @@ export class Home extends React.Component {
         })
     }
 
+    loadNearbyPost(
+        position = JSON.parse(localStorage.getItem(POSITION_KEY)),
+        range = 20000,
+    ) {
+        this.setState({
+            loadingPosts: true,
+            error: null,
+        });
+        const token = localStorage.getItem(TOKEN_KEY);
+        fetch(`${API_ROOT}/search?lat=${position.latitude}&lon=${position.longitude}&range=${range}`, {
+            method: 'GET',
+            headers: {
+                Authorization: `${AUTH_HEADER} ${token}`,
+            },
+        }).then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Failed to load posts.');
+        }).then((data) => {
+            console.log(data);
+            this.setState({
+                loadingPosts: false,
+                posts: data ? data : [],
+            });
+        }).catch((error) => {
+            this.setState({
+                loadingPosts: false,
+                error: error.message,
+            });
+        });
+    }
+
     componentDidMount() {
         this.getGeolocation();
     }
-
     render() {
         const operations = <Button>Create New Post</Button>;
         return (
