@@ -55,15 +55,15 @@ export class Home extends React.Component {
         })
     }
 
-    loadNearbyPost(
-        position = JSON.parse(localStorage.getItem(POSITION_KEY)),
-        range = 20000,
-    ) {
+    loadNearbyPost() {
         this.setState({
             loadingPosts: true,
             error: null,
         });
+        const position = JSON.parse(localStorage.getItem(POSITION_KEY));
+        const range = 20000;
         const token = localStorage.getItem(TOKEN_KEY);
+
         fetch(`${API_ROOT}/search?lat=${position.latitude}&lon=${position.longitude}&range=${range}`, {
             method: 'GET',
             headers: {
